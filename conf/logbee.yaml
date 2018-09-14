@@ -1,0 +1,56 @@
+# redis database configuration
+broadcaster: 
+  redis: 
+    host: 10.88.2.10
+    port: 6379
+    password: cloud_li
+    database: 0
+    max_connections: 10
+    max_ele_in_queue: 10000
+  ftp: 
+    host: localhost
+    port: 21
+    user: ftp
+    password: ftp
+    timeout: -999
+# logbee configuration
+logbee: 
+  workdir: /home/logbee
+  logdir: /var/log/logbee
+  elasticsearch_index: logbee
+    
+# log collection properties 
+works: 
+  vds: 
+    # work name must be different with other work
+    work_name: vds
+    upload_method: local
+    sample_file_storage_path: /home/SampleFile
+    keep_source_file: true
+    file_name_match: 'DES.*\.tar\.gz'
+#     compression_method: Null
+    compression_method: tar.gz
+    alert_file_name_match: 'DES.*\.txt'
+    source_dirs:
+      - /var/log/test-1
+    max_threads: 3
+    data_type: csv
+    split_symbol: '|'
+    # send to redis fail local cache file size
+    cache_file_size: 10485760
+  ids: 
+    # work name must be different with other work
+    work_name: ids
+    upload_method: local
+    sample_file_storage_path: /home/SampleFile
+    keep_source_file: false
+    file_name_match: null #'EVT.*\.txt'
+    compression_method: null
+    alert_file_name_match: null #'EVT.*\.txt'
+    source_dirs:
+      - /var/log/test-2
+    max_threads: 3
+    data_type: csv
+    split_symbol: '|'
+    # send to redis fail local cache file size
+    cache_file_size: 10485760

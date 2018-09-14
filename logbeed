@@ -1,0 +1,134 @@
+#!/bin/bash
+# chkconfig: 2345 70 90
+# description: logbeed is a log collection tool. \
+#              This service starts up the logbee daemon.
+
+:<<!
+@Author: cloud
+Date: 2017 12 5
+logbee daemon
+!
+
+color_echo(){
+    echo -e "\033[${1}m${2}\033[0m" 
+}
+
+err_print(){
+    color_echo "31" "${1}"
+}
+
+warn_print(){
+    color_echo "33" "${1}"
+}
+
+green_print(){
+    color_echo "32" "${1}"
+}
+
+blue_print(){
+    color_echo "34" "${1}"
+}
+
+init_env(){
+#   Initialization the environment about logbee
+    LOGBEE_HOME=/usr/lib/logbee
+    export PATH=${LOGBEE_HOME}/bin:$PATH
+
+    if [ ! -n "${LOGBEE_PID}" ];then
+	LOGBEE_PID=/var/run/logbee.pid
+    fi
+
+    if [ ! -n "${LOGBEE_CONF_DIR}" ];then
+	LOGBEE_CONF_DIR=/etc/logbee/conf
+    fi
+    if [ ! -f "${LOGBEE_CONF_DIR}/logbee.yaml" ];then
+	err_print "file : '${LOGBEE_CONF_DIR}/logbee.yaml' is not found."
+	exit 1
+    fi
+    if [ ! -f "${LOGBEE_CONF_DIR}/logging.yaml" ];then
+	err_print "file :'${LOGBEE_CONF_DIR}/logging.yaml' is not found."
+	exit 1
+    fi
+    export LOGBEE_CONF_DIR=${LOGBEE_CONF_DIR}
+}
+
+command_submit(){
+    logbee --action=${1} --pidname=${LOGBEE_PID} 2>&1
+}
+
+get_status(){
+    logbee_status=''
+    if [ -f "${LOGBEE_PID}.lock" ];then
+	if [ ! `ps aux | awk '{print $2}' | grep -w $(cat "${LOGBEE_PID}.lock")` == '' ];then
+	    logbee_status='running'
+	else
+	    logbee_status='dead'
+	fi
+    elif [ ! -f "${LOGBEE_PID}.lock" ];then
+        logbee_status='unrunning'
+    fi
+}
+
+logbeed_start(){
+    if [ ${logbee_status} == 'running' ];then
+        err_print "logbee is alredy running."
+    else
+	echo 'logbeed starting ...'
+	rm -f "${LOGBEE_PID}.lock"
+	command_submit 'start'
+	sleep 1
+    fi 
+}
+
+logbeed_stop(){
+    if [ ${logbee_status} == 'unrunning' ];then
+        warn_print "logbee is not running."
+    elif [ ${logbee_status} == 'dead' ];then
+	warn_print 'logbeed is died ,but pid is exist.'
+	rm -f "${LOGBEE_PID}.lock"
+    elif [ ${logbee_status} == 'running' ];then
+        echo 'stop logbee daemon...'
+	command_submit 'stop'
+	sleep 1
+    fi 
+}
+
+logbeed_main(){
+    init_env
+    case $1 in
+        'status') get_status
+            if [ ${logbee_status} == 'running' ];then
+		echo 'logbeed is running...'
+            elif [ ${logbee_status} == 'dead' ];then
+		warn_print 'logbeed is died ,but pid is exist'
+            elif [ ${logbee_status} == 'unrunning' ];then
+		echo 'logbeed is not running'
+            else
+		err_print "get logbeed status error."
+		exit 1
+            fi
+        ;;
+        'start') get_status
+            logbeed_start
+	;;
+        'stop') get_status
+	    logbeed_stop
+        ;;
+        'restart') get_status
+            logbeed_stop
+	    sleep 2
+	    get_status
+	    if [ ${logbee_status} != 'running' ];then
+	        logbeed_start
+	    else
+		err_print "Stop logbeed faild."
+            fi
+	;;
+        * )
+	    warn_print 'Usage: /etc/init.d/logbeed [ start | stop | restart | status ]'
+        ;;
+    esac
+}
+
+logbeed_main "$@"
+exit 0

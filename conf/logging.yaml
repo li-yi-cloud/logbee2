@@ -1,0 +1,30 @@
+handlers:
+  console:
+    class : logging.StreamHandler
+    formatter: brief
+    level   : INFO
+    stream  : ext://sys.stdout
+  file:
+    class : logging.handlers.RotatingFileHandler
+    formatter: default
+    filename: logbee-daemon.log
+    maxBytes: 10485760
+    backupCount: 5
+    encoding: UTF-8
+    delay: 0
+formatters:
+  brief:
+    format: '%(asctime)s - %(levelname)s - %(message)s'
+  default:
+    format: '%(asctime)s - %(filename)s [line:%(lineno)d] - %(levelname)s - %(message)s'
+    datefmt: '%Y-%m-%d %H:%M:%S'    
+loggers:
+    clogger:
+        level: INFO
+        handlers: [console]
+    flogger:
+        level: WARNING
+        handlers: [file]
+root:
+    level: INFO
+    handlers: [console,file]
